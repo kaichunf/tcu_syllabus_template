@@ -1,0 +1,119 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{tcu-syllabus}[2026/10/13 TCU Syllabus Layout]
+% All packages and fonts are compatible with pdfLaTeX.
+\RequirePackage[T1]{fontenc}
+\RequirePackage[utf8]{inputenc}
+\RequirePackage{arimo}     % Arial-compatible free font family
+\renewcommand{\familydefault}{\sfdefault}
+\RequirePackage[letterpaper,margin=1in,headheight=14pt,headsep=0pt,footskip=.5in]{geometry}
+\RequirePackage[table]{xcolor}
+\RequirePackage{array}
+\RequirePackage{tabularx}
+\RequirePackage{longtable}
+\RequirePackage{enumitem}
+\RequirePackage{graphicx}
+\RequirePackage{fancyhdr}
+\RequirePackage{microtype}
+\RequirePackage{needspace}
+\RequirePackage[normalem]{ulem}
+\RequirePackage{hyperref}
+\RequirePackage{ragged2e}
+\RequirePackage{amssymb}
+\RequirePackage{tocloft}
+\RequirePackage{expl3}
+\definecolor{TCUPurple}{HTML}{4D1979}
+\definecolor{TCUSchedulePurple}{HTML}{7030A0}
+\definecolor{TCULightGray}{HTML}{D2D2D2}
+\definecolor{TCUDarkGray}{HTML}{777777}
+\hypersetup{colorlinks=true,urlcolor=blue,linkcolor=TCUPurple,pdfborder={0 0 0}}
+% TOC: dots for section level, suppress default title, show 3 levels
+\renewcommand{\cftsecdotsep}{\cftdotsep}
+\setcounter{tocdepth}{3}
+\makeatletter
+\renewcommand{\tableofcontents}{\@starttoc{toc}}
+\makeatother
+% Per-character small-caps renderer (Arimo has no sc face in pdfLaTeX).
+% Uppercase input chars → full size; lowercase input chars → uppercased at small size.
+% tl_map_inline skips space tokens, so we split at spaces first with regex_split,
+% then reassemble with explicit \space between words.
+\ExplSyntaxOn
+\bool_new:N \l_tcu_sc_first_bool
+\seq_new:N  \l_tcu_sc_seq
+\cs_new_protected:Npn \tcu_sc_text:nnn #1 #2 #3 {
+  \regex_split:nnN { \x{20} } { #3 } \l_tcu_sc_seq
+  \bool_set_true:N \l_tcu_sc_first_bool
+  \seq_map_inline:Nn \l_tcu_sc_seq {
+    \bool_if:NTF \l_tcu_sc_first_bool {
+      \bool_set_false:N \l_tcu_sc_first_bool
+    } {
+      { \fontsize {#1} {#1} \selectfont \space }
+    }
+    \tl_map_inline:nn { ##1 } {
+      \token_if_cs:NTF ####1
+        { { \fontsize {#1} {#1} \selectfont ####1 } }
+        {
+          \int_compare:nNnTF { \char_value_lccode:n { `####1 } } = { `####1 }
+            { { \fontsize {#2} {#2} \selectfont \MakeUppercase {####1} } }
+            { { \fontsize {#1} {#1} \selectfont ####1 } }
+        }
+    }
+  }
+}
+% Public interface: #1 = full size (pt), #2 = small size (pt), #3 = text
+\NewDocumentCommand \TCUSmallCapsText { m m m } {
+  \tcu_sc_text:nnn {#1} {#2} {#3}
+}
+\ExplSyntaxOff
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancyfoot[L]{\fontsize{10.5}{11}\selectfont\CopyrightText}
+\fancyfoot[R]{\fontsize{10.5}{11}\selectfont Page \thepage}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\renewcommand{\baselinestretch}{1.0}
+\setlist[itemize,1]{label=\textbullet,leftmargin=.50in,labelsep=.17in,topsep=0pt,itemsep=0pt,parsep=0pt,partopsep=0pt}
+\setlist[itemize,2]{label=$\circ$,leftmargin=.50in,labelsep=.17in,topsep=0pt,itemsep=0pt,parsep=0pt,partopsep=0pt}
+\setlist[enumerate,1]{label=\Alph*.,leftmargin=.50in,labelsep=.17in,topsep=0pt,itemsep=0pt,parsep=0pt,partopsep=0pt}
+\newcommand{\TCUHeadingOne}[1]{%
+  \par\vspace{6pt}%
+  \phantomsection\addcontentsline{toc}{section}{#1}%
+  {\centering\color{TCUPurple}\bfseries\fontsize{16}{19}\selectfont
+   \TCUSmallCapsText{16}{12.5}{#1}\par}%
+  \vspace{-1pt}}
+\newcommand{\TCUHeadingTwo}[1]{%
+  \par\needspace{2\baselineskip}\vspace{6pt}%
+  \phantomsection\addcontentsline{toc}{subsection}{#1}%
+  {\color{TCUPurple}\bfseries\fontsize{14}{17}\selectfont #1\par}%
+  \vspace{-2pt}}
+\newcommand{\TCUHeadingThree}[1]{%
+  \par\vspace{5pt}%
+  \phantomsection\addcontentsline{toc}{subsubsection}{#1}%
+  {\bfseries #1\par}%
+  \vspace{-2pt}}
+\newcommand{\TCUDocTitle}[1]{{\centering\color{TCUPurple}\bfseries\fontsize{16}{19}\selectfont\MakeUppercase{#1}\par}}
+\newcommand{\TCUField}[2]{#1: #2\par}
+\newcommand{\TCULogoPlaceholder}{%
+  \fcolorbox{TCUPurple}{white}{\parbox[c][.43in][c]{1.03in}{\centering\color{TCUPurple}\bfseries\fontsize{17}{19}\selectfont TCU\\[-1pt]{\normalfont\tiny LOGO}}}}
+\newcommand{\TCUQRPlaceholder}{%
+  \fcolorbox{TCUDarkGray}{white}{\parbox[c][.66in][c]{.66in}{\centering\color{TCUDarkGray}\fontsize{7}{9}\selectfont QR\\PLACE-\\HOLDER}}}
+\newcommand{\CopyrightText}{\textcopyright\ TCU \the\year\ (revised \ifnum\month<10 0\fi\the\month/\the\year)}
+\newcommand{\TCUSLOTableStart}{%
+\begingroup\fontsize{10}{12}\selectfont\renewcommand{\arraystretch}{1.08}
+\setlength{\tabcolsep}{3.2pt}
+\begin{tabular}{|>{\RaggedRight\arraybackslash}p{1.90in}|>{\RaggedRight\arraybackslash}p{4.25in}|}\hline
+\rowcolor{TCUSchedulePurple}\color{white}\bfseries Assignment/Assessment & \color{white}\bfseries Targeted Student Learning Outcomes (SLOs) \\ \hline}
+\newcommand{\TCUSLOTableEnd}{\end{tabular}\endgroup\par}
+\newcommand{\TCUGradeTableStart}{%
+\par\noindent\hspace*{.94in}\begingroup\fontsize{10.5}{12}\selectfont\renewcommand{\arraystretch}{1.00}
+\begin{tabular}{|>{\columncolor{TCUPurple}\color{white}\bfseries}p{.64in}|p{1.12in}|}\hline
+\rowcolor{black}\color{white}Grade & \color{white}Score \\ \hline}
+\newcommand{\TCUGradeTableEnd}{\end{tabular}\endgroup\par}
+\newcommand{\TCUScheduleTableStart}{%
+\begingroup\fontsize{10}{12}\selectfont\renewcommand{\arraystretch}{1.08}
+\setlength{\tabcolsep}{3.2pt}
+\begin{longtable}{|>{\RaggedRight\arraybackslash}p{.72in}|>{\RaggedRight\arraybackslash}p{1.88in}|>{\RaggedRight\arraybackslash}p{1.48in}|>{\RaggedRight\arraybackslash}p{1.95in}|}\hline
+\rowcolor{TCUSchedulePurple}\color{white}\bfseries Week & \color{white}\bfseries Topics & \color{white}\bfseries Notes & \color{white}\bfseries Student Learning Outcomes (SLOs) \\ \hline\endfirsthead
+\endhead}
+\newcommand{\TCUScheduleTableEnd}{\end{longtable}\endgroup}
